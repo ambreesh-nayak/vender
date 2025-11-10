@@ -1,0 +1,26 @@
+name: deployment
+
+on:
+ push:
+   bransches:
+   - main
+
+
+   jobs :
+   deploy:
+     run-on: ubuntu-latest
+     steps:
+     - name: checkout
+       uses: actions/checkout@v1
+
+       -name: configure AWS Credentials@v1
+        uses: aws-actions/configure-aws-credentials@v1
+        with: 
+          aws-access-key-id: ${{ secret.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key-id: ${{ secret.AWS_SECRET_ACCESS_KEY_ID }}
+          aws-region: us-east-1
+
+
+          - name: Deploy static site to s3 busket
+           run: aws s3 sync . s3//vender --delete
+          
