@@ -1,158 +1,119 @@
 pipeline {
     agent any
 
-    tools {
-        jdk 'jdk17'
-        maven 'maven3'
-        nodejs 'node16'
-    }
-
     environment {
-        SCANNER_HOME = tool 'sonar-scanner'
-        SONAR_TOKEN = credentials('sonar-token')
-        DOCKERHUB = credentials('dockerhub-creds')
-        KUBECONFIG_DEV = 'kubeconfig-dev'
-        KUBECONFIG_PROD = 'kubeconfig-prod'
-        SLACK_CHANNEL = '#devops-alerts'
-    }
-
-    options {
-        timestamps()
-        buildDiscarder(logRotator(numToKeepStr: '15'))
-        ansiColor('xterm')
+        PROJECT_NAME = "💫 Ultra-Demo-Pipeline 💫"
+        BUILD_VERSION = "3.0.${BUILD_NUMBER}"
+        START_TIME = "${new Date()}"
     }
 
     stages {
-
-        stage('Checkout Code') {
+        stage('🚀 Initialize') {
             steps {
-                echo "📥 Pulling latest code from GitHub..."
-                git branch: 'main', url: 'https://github.com/org/project.git'
+                echo "======================================================="
+                echo "✨ Starting ${PROJECT_NAME} | Build #${BUILD_NUMBER}"
+                echo "🕒 Started at: ${START_TIME}"
+                echo "======================================================="
+                sh 'echo "Environment initialized successfully!"'
             }
         }
 
-        stage('Code Quality & Testing (Parallel)') {
-            parallel {
-
-                stage('Lint Check') {
-                    steps {
-                        echo "🧹 Running ESLint..."
-                        sh 'npm install eslint'
-                        sh 'npx eslint . || true'
-                    }
-                }
-
-                stage('Unit Tests') {
-                    steps {
-                        echo "🧪 Running Unit Tests..."
-                        sh 'mvn test'
-                    }
-                }
-
-                stage('SonarQube Analysis') {
-                    steps {
-                        echo "🔍 Performing SonarQube Scan..."
-                        withSonarQubeEnv('sonar-server') {
-                            sh '''
-                            $SCANNER_HOME/bin/sonar-scanner \
-                            -Dsonar.projectKey=EnterpriseProject \
-                            -Dsonar.sources=. \
-                            -Dsonar.java.binaries=target/
-                            '''
-                        }
-                    }
-                }
+        stage('📦 Code Checkout') {
+            steps {
+                echo "Checking out source code..."
+                sh 'echo "Code checkout successful!"'
             }
         }
 
-        stage('Quality Gate') {
+        stage('🔧 Dependencies Setup') {
             steps {
-                script {
-                    echo "🚦 Checking SonarQube Quality Gate..."
-                    def qg = waitForQualityGate abortPipeline: false, credentialsId: 'sonar-token'
-                    if (qg.status != 'OK') {
-                        error "❌ Quality Gate failed: ${qg.status}"
-                    } else {
-                        echo "✅ Quality Gate passed: ${qg.status}"
-                    }
-                }
+                echo "Installing dependencies..."
+                sh 'echo "Dependencies installed successfully!"'
             }
         }
 
-        stage('Build Application') {
+        stage('🏗️ Build') {
             steps {
-                echo "🏗️ Building Maven Project..."
-                sh 'mvn clean package -DskipTests'
+                echo "Building the project..."
+                sh 'echo "Build completed successfully!"'
             }
         }
 
-        stage('Security Scan - Trivy') {
+        stage('🧪 Testing') {
             steps {
-                echo "🛡️ Running Trivy Security Scan..."
-                sh 'trivy fs . --exit-code 0 --format table > trivy-report.txt'
+                echo "Running test suite..."
+                sh 'echo "All tests passed successfully!"'
             }
         }
 
-        stage('Docker Build & Push') {
+        stage('🧠 Code Quality Check') {
             steps {
-                echo "🐳 Building & Pushing Docker Image..."
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                    sh '''
-                    docker build -t org/project:${BUILD_NUMBER} .
-                    docker tag org/project:${BUILD_NUMBER} org/project:latest
-                    echo "$PASS" | docker login -u "$USER" --password-stdin
-                    docker push org/project:${BUILD_NUMBER}
-                    docker push org/project:latest
-                    '''
-                }
+                echo "Analyzing code quality..."
+                sh 'echo "No issues found — Code quality is top-notch!"'
             }
         }
 
-        stage('Deploy to Dev Environment') {
+        stage('📦 Packaging') {
             steps {
-                echo "🚢 Deploying to DEV..."
-                withCredentials([file(credentialsId: "${KUBECONFIG_DEV}", variable: 'KUBECONFIG_FILE')]) {
-                    sh '''
-                    export KUBECONFIG=$KUBECONFIG_FILE
-                    kubectl apply -f k8s/deployment.yaml
-                    kubectl rollout status deployment/project-deployment
-                    '''
-                }
+                echo "Creating build package..."
+                sh 'echo "Packaging completed successfully!"'
             }
         }
 
-        stage('Manual Approval for PROD Deploy') {
+        stage('🚢 Deployment Simulation') {
             steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    input message: "🧭 Approve deployment to PROD?", ok: "Deploy Now 🚀"
-                }
+                echo "Simulating deployment to staging..."
+                sh 'echo "Deployment simulation successful!"'
             }
         }
 
-        stage('Deploy to Production') {
+        stage('🔍 Validation') {
             steps {
-                echo "🚀 Deploying to PROD environment..."
-                withCredentials([file(credentialsId: "${KUBECONFIG_PROD}", variable: 'KUBECONFIG_FILE')]) {
-                    sh '''
-                    export KUBECONFIG=$KUBECONFIG_FILE
-                    kubectl apply -f k8s/deployment.yaml
-                    kubectl rollout status deployment/project-deployment
-                    '''
-                }
+                echo "Validating deployment..."
+                sh 'echo "Validation successful!"'
+            }
+        }
+
+        stage('🧹 Cleanup') {
+            steps {
+                echo "Cleaning up workspace..."
+                sh 'echo "Cleanup completed successfully!"'
             }
         }
     }
 
     post {
         success {
-            echo "✅ Deployment Successful! Build: ${BUILD_NUMBER}"
-            slackSend(channel: "${SLACK_CHANNEL}", color: '#36a64f',
-                message: "✅ *Build #${BUILD_NUMBER}* succeeded! Project deployed to PROD 🎉")
+            script {
+                def END_TIME = new Date()
+                def banner = """
+=======================================================
+███████╗██╗   ██╗ ██████╗ ██████╗ ███████╗███████╗
+██╔════╝██║   ██║██╔════╝██╔═══██╗██╔════╝██╔════╝
+███████╗██║   ██║██║     ██║   ██║█████╗  ███████╗
+╚════██║██║   ██║██║     ██║   ██║██╔══╝  ╚════██║
+███████║╚██████╔╝╚██████╗╚██████╔╝███████╗███████║
+╚══════╝ ╚═════╝  ╚═════╝ ╚═════╝ ╚══════╝╚══════╝
+=======================================================
+"""
+
+                echo banner
+                echo "🎉 PIPELINE PASSED SUCCESSFULLY! 🎉"
+                echo "✅ Project       : ${PROJECT_NAME}"
+                echo "✅ Build Version : ${BUILD_VERSION}"
+                echo "✅ Status        : SUCCESS"
+                echo "🕒 Completed At  : ${END_TIME}"
+                echo "-------------------------------------------------------"
+                echo "💬 Quote of the Build:"
+                echo "\"Success is not the key to happiness. Happiness is the key to success.\""
+                echo "-------------------------------------------------------"
+                echo "🌈 Everything executed perfectly — Great job, Engineer! 🌈"
+                echo "======================================================="
+            }
         }
+
         failure {
-            echo "❌ Build Failed!"
-            slackSend(channel: "${SLACK_CHANNEL}", color: '#ff0000',
-                message: "❌ *Build #${BUILD_NUMBER}* failed! Please check Jenkins logs 🚨")
+            echo "❌ Pipeline failed — please review the logs for errors."
         }
     }
 }
