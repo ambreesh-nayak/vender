@@ -99,7 +99,7 @@ pipeline {
 
                 echo banner
                 echo "🎉 PIPELINE PASSED SUCCESSFULLY! 🎉"
-                echo "✅ Project       : ${PROJECT_NAME}"
+                echo "✅ Project       : ${PROJECT_NAMe}"
                 echo "✅ Build Version : ${BUILD_VERSION}"
                 echo "✅ Status        : SUCCESS"
                 echo "🕒 Completed At  : ${END_TIME}"
